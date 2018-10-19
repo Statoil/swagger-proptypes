@@ -1,0 +1,33 @@
+{
+  "name": "swagger-proptypes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src -d built",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nemzes/swagger-proptypes.git"
+  },
+  "author": "Nelson Menezes <nemzes@gmail.com>",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/nemzes/swagger-proptypes/issues"
+  },
+  "homepage": "https://github.com/nemzes/swagger-proptypes#readme",
+  "dependencies": {
+    "swagger-client": "^3.8.21"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.2",
+    "@babel/core": "^7.1.2",
+    "@babel/preset-env": "^7.1.0",
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.7.0",
+    "eslint-config-prettier": "^3.1.0",
+    "eslint-plugin-prettier": "^3.0.0",
+    "prettier": "^1.14.3"
+  }
+}
