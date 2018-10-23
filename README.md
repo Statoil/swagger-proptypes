@@ -1,3 +1,6 @@
+[![Build
+Status](https://travis-ci.org/Statoil/swagger-proptypes.svg?branch=master)](https://travis-ci.org/Statoil/swagger-proptypes)
+
 # swagger-proptypes
 
 A simple library to transform Swagger model definitions into [PropType](https://www.npmjs.com/package/prop-types) specifications. You can use this as part of a testing framework.
