@@ -1,174 +1,325 @@
 "use strict";
 
+var _propTypes = _interopRequireDefault(require("prop-types"));
+
 var _ = require(".");
 
-const PREFIX = 'PropTypes.';
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 describe('individual props', () => {
+  test('fail on unknown type', () => {
+    expect(() => (0, _.propFromDef)({
+      type: 'whatever'
+    })).toThrow();
+  });
   describe('primitives', () => {
     test('string', () => {
       expect((0, _.propFromDef)({
         type: 'string'
-      })).toEqual(`${PREFIX}string`);
+      })).toBe(_propTypes.default.string);
     });
     test('boolean', () => {
       expect((0, _.propFromDef)({
         type: 'boolean'
-      })).toEqual(`${PREFIX}bool`);
+      })).toBe(_propTypes.default.bool);
     });
     test('number', () => {
       expect((0, _.propFromDef)({
         type: 'number'
-      })).toEqual(`${PREFIX}number`);
+      })).toBe(_propTypes.default.number);
     });
     test('integer', () => {
       expect((0, _.propFromDef)({
         type: 'number'
-      })).toEqual(`${PREFIX}number`);
+      })).toBe(_propTypes.default.number);
     });
   });
-  describe('arrays', () => {
-    test('of strings', () => {
-      expect((0, _.propFromDef)({
-        type: 'array',
-        items: {
-          type: 'string'
-        }
-      })).toEqual(`${PREFIX}arrayOf(${PREFIX}string)`);
+  describe('array of strings', () => {
+    let props;
+    beforeEach(() => {
+      props = {
+        p: (0, _.propFromDef)({
+          type: 'array',
+          items: {
+            type: 'string'
+          }
+        })
+      };
     });
-    test('of numbers', () => {
-      expect((0, _.propFromDef)({
-        type: 'array',
-        items: {
-          type: 'number'
-        }
-      })).toEqual(`${PREFIX}arrayOf(${PREFIX}number)`);
+    test('no errors on success', () => {
+      const fn = () => (0, _.check)(props, {
+        p: ['an', 'array', 'of', 'strings']
+      });
+
+      expect(fn).not.toThrow();
+    });
+    test('errors on failure', () => {
+      const fn = () => (0, _.check)(props, {
+        p: ['an', 'array', 'of', 4, 'strings']
+      });
+
+      expect(fn).toThrow();
+    });
+  });
+  describe('array of numbers', () => {
+    let props;
+    beforeEach(() => {
+      props = {
+        p: (0, _.propFromDef)({
+          type: 'array',
+          items: {
+            type: 'number'
+          }
+        })
+      };
+    });
+    test('no errors on success', () => {
+      const fn = () => (0, _.check)(props, {
+        p: [1, 2, 3, 4, 5, 6]
+      });
+
+      expect(fn).not.toThrow();
+    });
+    test('errors on failure', () => {
+      const fn = () => (0, _.check)(props, {
+        p: [1, 2, 3, 4, '5', 6]
+      });
+
+      expect(fn).toThrow();
     });
   });
   describe('enums', () => {
-    test('one item', () => {
-      expect((0, _.propFromDef)({
-        type: 'string',
-        enum: ['one']
-      })).toEqual(`${PREFIX}oneOf(["one"])`);
+    let props;
+    beforeEach(() => {
+      props = {
+        p: (0, _.propFromDef)({
+          type: 'string',
+          enum: ['one', 'two']
+        })
+      };
     });
-    test('several items', () => {
-      expect((0, _.propFromDef)({
-        type: 'string',
-        enum: ['a', 'b', 'c']
-      })).toEqual(`${PREFIX}oneOf(["a","b","c"])`);
+    test('no errors on success', () => {
+      const fn = () => (0, _.check)(props, {
+        p: 'two'
+      });
+
+      expect(fn).not.toThrow();
+    });
+    test('errors on failure', () => {
+      const fn = () => (0, _.check)(props, {
+        p: 'three'
+      });
+
+      expect(fn).toThrow();
     });
   });
   describe('objects', () => {
-    test('one property', () => {
-      expect((0, _.propFromDef)({
-        type: 'object',
-        properties: {
-          one: {
-            type: 'string'
-          }
+    let props;
+    beforeEach(() => {
+      props = {
+        p: (0, _.propFromDef)({
+          type: 'object',
+          properties: {
+            one: {
+              type: 'string'
+            },
+            two: {
+              type: 'boolean'
+            },
+            three: {
+              type: 'string'
+            }
+          },
+          required: ['two']
+        })
+      };
+    });
+    test('no errors on success', () => {
+      const fn = () => (0, _.check)(props, {
+        p: {
+          one: 'a string',
+          two: true,
+          three: 'another string'
         }
-      })).toEqual(`${PREFIX}exact({\n  "one": ${PREFIX}string\n})`);
+      });
+
+      expect(fn).not.toThrow();
     });
-    test('multiple properties', () => {
-      expect((0, _.propFromDef)({
-        type: 'object',
-        properties: {
-          one: {
-            type: 'number'
-          },
-          two: {
-            type: 'boolean'
-          },
-          three: {
-            type: 'string'
-          }
+    test('no errors on missing optional props', () => {
+      const fn = () => (0, _.check)(props, {
+        p: {
+          two: true
         }
-      })).toEqual(`${PREFIX}exact({\n  "one": ${PREFIX}number,\n  "two": ${PREFIX}bool,\n  "three": ${PREFIX}string\n})`);
+      });
+
+      expect(fn).not.toThrow();
     });
-    test('required properties', () => {
-      expect((0, _.propFromDef)({
-        type: 'object',
-        properties: {
-          one: {
-            type: 'number'
-          },
-          two: {
-            type: 'boolean'
-          }
-        },
-        required: ['two']
-      })).toEqual(`${PREFIX}exact({\n  "one": ${PREFIX}number,\n  "two": ${PREFIX}bool.isRequired\n})`);
+    test('errors on missing required props', () => {
+      const fn = () => (0, _.check)(props, {
+        p: {
+          one: 'a string',
+          three: 'another string'
+        }
+      });
+
+      expect(fn).toThrow();
     });
-    test('required enum', () => {
-      expect((0, _.propFromDef)({
-        type: 'object',
-        properties: {
-          one: {
-            enum: ['abc', 'def']
-          }
-        },
-        required: ['one']
-      })).toEqual(`${PREFIX}exact({\n  "one": ${PREFIX}oneOf(["abc","def"]).isRequired\n})`);
+    test('errors on extra props', () => {
+      const fn = () => (0, _.check)(props, {
+        p: {
+          two: false,
+          four: 'I should not be here'
+        }
+      });
+
+      expect(fn).toThrow();
     });
   });
-  describe('refs', () => {
-    test('without refBase', () => {
-      expect((0, _.propFromDef)({
-        $ref: '#/definitions/SomeDef'
-      })).toEqual('SomeDef');
+  describe('definition references', () => {
+    let props;
+    let refBase;
+    beforeEach(() => {
+      refBase = {
+        SomeDef: _propTypes.default.bool
+      };
+      props = {
+        p: (0, _.propFromDef)({
+          type: 'object',
+          properties: {
+            one: {
+              type: 'string'
+            },
+            two: {
+              $ref: '#/definitions/SomeDef'
+            }
+          }
+        }, refBase)
+      };
     });
-    test('with refBase', () => {
-      expect((0, _.propFromDef)({
-        $ref: '#/definitions/SomeDef'
-      }, 'props.')).toEqual('props.SomeDef');
+    test('no errors on success', () => {
+      const fn = () => (0, _.check)(props, {
+        p: {
+          two: true
+        }
+      });
+
+      expect(fn).not.toThrow();
+    });
+    test('errors on failure', () => {
+      const fn = () => (0, _.check)(props, {
+        p: {
+          two: 3
+        }
+      });
+
+      expect(fn).toThrow();
+    });
+    test('errors when missing reference', () => {
+      expect(() => (0, _.propFromDef)({
+        type: 'object',
+        properties: {
+          one: {
+            $ref: '#/definitions/SomeOtherDef'
+          }
+        }
+      })).toThrow();
     });
   });
 });
 describe('full definitions', () => {
-  const swaggerDefs = {
-    DefOne: {
-      type: 'object',
-      properties: {
-        propOneOne: {
-          type: 'string'
+  let props;
+  beforeEach(() => {
+    props = (0, _.propsFromDefs)({
+      DefOne: {
+        type: 'object',
+        properties: {
+          one: {
+            type: 'string'
+          },
+          two: {
+            type: 'number'
+          }
         },
-        propOneTwo: {
-          type: 'integer'
-        }
+        required: ['two']
       },
-      required: ['propOneTwo']
-    },
-    DefTwo: {
-      type: 'object',
-      properties: {
-        propTwoOne: {
-          type: 'boolean'
-        },
-        propTwoTwo: {
-          type: 'string',
-          enum: ['a', 'b', 'c']
+      DefTwo: {
+        type: 'object',
+        properties: {
+          one: {
+            type: 'boolean'
+          },
+          two: {
+            type: 'string',
+            enum: ['a', 'b', 'c']
+          },
+          three: {
+            type: 'object',
+            properties: {
+              four: {
+                type: 'string'
+              },
+              five: {
+                type: 'string'
+              }
+            }
+          }
         }
       }
-    }
-  };
-  test('process all definitions', () => {
-    expect(Object.keys((0, _.propsFromDefs)(swaggerDefs))).toEqual(expect.arrayContaining(['DefOne', 'DefTwo']));
+    });
   });
-  test('generates module', () => {
-    expect((0, _.moduleFromDefs)(swaggerDefs)).toEqual(`import PropTypes from 'prop-types';
-const props = {};
+  test('no errors on success (1)', () => {
+    const fn = () => (0, _.check)(props.DefOne, {
+      one: 'a string',
+      two: 123
+    });
 
-props.DefOne = ${PREFIX}exact({
-  "propOneOne": ${PREFIX}string,
-  "propOneTwo": ${PREFIX}number.isRequired
-});
+    expect(fn).not.toThrow();
+  });
+  test('no errors on success (2)', () => {
+    const fn = () => (0, _.check)(props.DefTwo, {
+      one: false,
+      two: 'b'
+    });
 
-props.DefTwo = ${PREFIX}exact({
-  "propTwoOne": ${PREFIX}bool,
-  "propTwoTwo": ${PREFIX}oneOf(["a","b","c"])
-});
+    expect(fn).not.toThrow();
+  });
+  test('errors on failure - missing required prop', () => {
+    const fn = () => (0, _.check)(props.DefOne, {
+      one: 'a string'
+    });
 
-export default props;
-`);
+    expect(fn).toThrow();
+  });
+  test('errors on failure - wrong prop type', () => {
+    const fn = () => (0, _.check)(props.DefOne, {
+      two: 'a string'
+    });
+
+    expect(fn).toThrow();
+  });
+  test('no errors on success - nested props', () => {
+    const fn = () => (0, _.check)(props.DefTwo, {
+      three: {
+        five: 'hello'
+      }
+    });
+
+    expect(fn).not.toThrow();
+  });
+  test('errors on failure - nested extra props', () => {
+    const fn = () => (0, _.check)(props.DefTwo, {
+      three: {
+        six: 'hello'
+      }
+    });
+
+    expect(fn).toThrow();
+  });
+  test('errors on failure - wrong enum value', () => {
+    const fn = () => (0, _.check)(props.DefTwo, {
+      two: 'this is invalid'
+    });
+
+    expect(fn).toThrow();
   });
 });

@@ -190,41 +190,50 @@ describe('full definitions', () => {
         properties: {
           one: { type: 'boolean' },
           two: { type: 'string', enum: ['a', 'b', 'c'] },
+          three: {
+            type: 'object',
+            properties: {
+              four: { type: 'string' },
+              five: { type: 'string' },
+            },
+          },
         },
       },
     });
   });
 
   test('no errors on success (1)', () => {
-    const fn = () =>
-      check({ p: props.DefOne }, { p: { one: 'a string', two: 123 } });
+    const fn = () => check(props.DefOne, { one: 'a string', two: 123 });
     expect(fn).not.toThrow();
   });
 
   test('no errors on success (2)', () => {
-    const fn = () =>
-      check({ p: props.DefTwo }, { p: { one: false, two: 'b' } });
+    const fn = () => check(props.DefTwo, { one: false, two: 'b' });
     expect(fn).not.toThrow();
   });
 
   test('errors on failure - missing required prop', () => {
-    const fn = () => check({ p: props.DefOne }, { p: { one: 'a string' } });
+    const fn = () => check(props.DefOne, { one: 'a string' });
     expect(fn).toThrow();
   });
 
   test('errors on failure - wrong prop type', () => {
-    const fn = () => check({ p: props.DefOne }, { p: { two: 'a string' } });
+    const fn = () => check(props.DefOne, { two: 'a string' });
     expect(fn).toThrow();
   });
 
-  test('errors on failure - extra props', () => {
-    const fn = () => check({ p: props.DefTwo }, { p: { three: 'hello' } });
+  test('no errors on success - nested props', () => {
+    const fn = () => check(props.DefTwo, { three: { five: 'hello' } });
+    expect(fn).not.toThrow();
+  });
+
+  test('errors on failure - nested extra props', () => {
+    const fn = () => check(props.DefTwo, { three: { six: 'hello' } });
     expect(fn).toThrow();
   });
 
   test('errors on failure - wrong enum value', () => {
-    const fn = () =>
-      check({ p: props.DefTwo }, { p: { two: 'this is invalid' } });
+    const fn = () => check(props.DefTwo, { two: 'this is invalid' });
     expect(fn).toThrow();
   });
 });

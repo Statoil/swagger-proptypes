@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import Swagger from 'swagger-client';
 
-const objectPropType = (obj, refBase) => {
+const objectPropType = (obj, refBase, nakedObj = false) => {
   const keys = Object.keys(obj.properties);
 
   if (keys.length === 0) {
@@ -18,7 +18,7 @@ const objectPropType = (obj, refBase) => {
     shape[key] = required ? prop.isRequired : prop;
   });
 
-  return PropTypes.exact(shape);
+  return nakedObj ? shape : PropTypes.exact(shape);
 };
 
 // -----------------------------------------------------------------------------
@@ -66,7 +66,8 @@ export const propsFromDefs = defs => {
   // references are created
 
   Object.keys(defs).forEach(
-    key => (props[key] = propFromDef(defs[key], props))
+    // key => (props[key] = propFromDef(defs[key], props))
+    key => (props[key] = objectPropType(defs[key], props, true))
   );
 
   return props;

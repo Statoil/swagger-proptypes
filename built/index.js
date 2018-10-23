@@ -3,64 +3,64 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.moduleFromDefs = exports.defsFromUrl = exports.propsFromDefs = exports.propFromDef = void 0;
+exports.check = exports.defsFromUrl = exports.propsFromDefs = exports.propFromDef = void 0;
+
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
 var _swaggerClient = _interopRequireDefault(require("swagger-client"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
-
-function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
-
-const PT_PREFIX = 'PropTypes';
-
-const stringify = data => JSON.stringify(data);
-
-const prefix = prop => `${PT_PREFIX}.${prop}`;
-
-const objectPropType = (obj, refBase = '') => {
+const objectPropType = (obj, refBase, nakedObj = false) => {
   const keys = Object.keys(obj.properties);
 
   if (keys.length === 0) {
-    return 'object';
+    return _propTypes.default.object;
   }
 
-  const props = keys.map(key => {
+  const shape = {};
+  keys.forEach(key => {
     const objDef = obj.properties[key];
-    const required = obj.required && obj.required.includes(key) ? '.isRequired' : '';
-    return `  ${stringify(key)}: ${propFromDef(objDef, refBase)}${required}`;
+    const prop = propFromDef(objDef, refBase);
+    const required = !!obj.required && obj.required.includes(key);
+    shape[key] = required ? prop.isRequired : prop;
   });
-  return prefix('exact({\n') + props.join(',\n') + '\n})';
+  return nakedObj ? shape : _propTypes.default.exact(shape);
 }; // -----------------------------------------------------------------------------
 
 
-const propFromDef = (def, refBase = '') => {
+const propFromDef = (def, refBase) => {
   if (def.$ref) {
     const refMatches = def.$ref.match(/#\/definitions\/(.*)/);
-    return `${refBase}${refMatches[1]}`;
+    const ref = refBase[refMatches[1]];
+
+    if (ref === undefined) {
+      throw Error(`Cannot find definition for reference "${refMatches[1]}"`);
+    }
+
+    return refBase[refMatches[1]];
   }
 
   if (def.enum) {
-    return prefix('oneOf(' + stringify(def.enum) + ')');
+    return _propTypes.default.oneOf(def.enum);
   }
 
   switch (def.type) {
     case 'array':
-      return prefix('arrayOf(' + propFromDef(def.items, refBase) + ')');
+      return _propTypes.default.arrayOf(propFromDef(def.items, refBase));
 
     case 'boolean':
-      return prefix('bool');
+      return _propTypes.default.bool;
 
     case 'integer':
     case 'number':
-      return prefix('number');
+      return _propTypes.default.number;
 
     case 'object':
       return objectPropType(def, refBase);
 
     case 'string':
-      return prefix('string');
+      return _propTypes.default.string;
 
     default:
       throw Error(`Unknown definition type "${def.type}"`);
@@ -69,42 +69,41 @@ const propFromDef = (def, refBase = '') => {
 
 exports.propFromDef = propFromDef;
 
-const propsFromDefs = (defs, refBase = '') => {
-  const props = {};
-  Object.keys(defs).forEach(key => props[key] = propFromDef(defs[key], refBase));
+const propsFromDefs = defs => {
+  const props = {}; // TODO: we must process defs that have references only after those
+  // references are created
+
+  Object.keys(defs).forEach( // key => (props[key] = propFromDef(defs[key], props))
+  key => props[key] = objectPropType(defs[key], props, true));
   return props;
 };
 
 exports.propsFromDefs = propsFromDefs;
 
-const defsFromUrl =
-/*#__PURE__*/
-function () {
-  var _ref = _asyncToGenerator(function* (url) {
-    const response = yield _swaggerClient.default.http({
-      url
-    });
-    return response.body.definitions;
+const defsFromUrl = async url => {
+  const response = await _swaggerClient.default.http({
+    url
   });
-
-  return function defsFromUrl(_x) {
-    return _ref.apply(this, arguments);
-  };
-}();
+  return response.body.definitions;
+};
 
 exports.defsFromUrl = defsFromUrl;
 
-const moduleFromDefs = swaggerDefs => {
-  const PROPS_REF_BASE = 'props';
-  const props = propsFromDefs(swaggerDefs, `${PROPS_REF_BASE}.`);
-  const propNames = Object.keys(props);
-  return `import ${PT_PREFIX} from 'prop-types';
-const ${PROPS_REF_BASE} = {};
+const check = (...args) => {
+  if (!console) {
+    throw Error('Cannot track checkPropTypes behaviour without a console');
+  }
 
-${propNames.map(propName => `${PROPS_REF_BASE}.${propName} = ${props[propName]}`).join(';\n\n')};
+  const cpt = require('prop-types').checkPropTypes;
 
-export default props;
-`;
+  const consoleError = console.error;
+
+  console.error = msg => {
+    throw Error(msg);
+  };
+
+  cpt.apply(undefined, args);
+  console.error = consoleError;
 };
 
-exports.moduleFromDefs = moduleFromDefs;
+exports.check = check;
