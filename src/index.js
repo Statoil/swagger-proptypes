@@ -13,9 +13,9 @@ const objectPropType = (obj, refBase) => {
   keys.forEach(key => {
     const objDef = obj.properties[key];
     const prop = propFromDef(objDef, refBase);
-    const required = obj.required && obj.required.includes(key);
+    const required = !!obj.required && obj.required.includes(key);
 
-    shape[key] = required ? prop.required : prop;
+    shape[key] = required ? prop.isRequired : prop;
   });
 
   return PropTypes.exact(shape);
@@ -26,6 +26,10 @@ const objectPropType = (obj, refBase) => {
 export const propFromDef = (def, refBase) => {
   if (def.$ref) {
     const refMatches = def.$ref.match(/#\/definitions\/(.*)/);
+    const ref = refBase[refMatches[1]];
+    if (ref === undefined) {
+      throw Error(`Cannot find definition for reference "${refMatches[1]}"`);
+    }
     return refBase[refMatches[1]];
   }
 
@@ -58,10 +62,11 @@ export const propFromDef = (def, refBase) => {
 export const propsFromDefs = defs => {
   const props = {};
 
-  // TODO: process defs that have references after those references are created
+  // TODO: we must process defs that have references only after those
+  // references are created
 
   Object.keys(defs).forEach(
-    key => (props[key] = propFromDef(defs[key], refBase))
+    key => (props[key] = propFromDef(defs[key], props))
   );
 
   return props;
@@ -70,4 +75,20 @@ export const propsFromDefs = defs => {
 export const defsFromUrl = async url => {
   const response = await Swagger.http({ url });
   return response.body.definitions;
+};
+
+export const check = (...args) => {
+  if (!console) {
+    throw Error('Cannot track checkPropTypes behaviour without a console');
+  }
+
+  const cpt = require('prop-types').checkPropTypes;
+  const consoleError = console.error;
+
+  console.error = msg => {
+    throw Error(msg);
+  };
+
+  cpt.apply(undefined, args);
+  console.error = consoleError;
 };

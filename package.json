@@ -12,8 +12,8 @@
   "scripts": {
     "build": "babel src -d built",
     "compile": "babel src -d debug --source-maps",
-    "test": "jest",
-    "test-watch": "jest --watch"
+    "test": "jest src",
+    "test-watch": "jest --watch src"
   },
   "repository": {
     "type": "git",
@@ -25,9 +25,6 @@
     "url": "https://github.com/Statoil/swagger-proptypes/issues"
   },
   "homepage": "https://github.com/Statoil/swagger-proptypes#readme",
-  "peerDependencies": {
-    "prop-types": "^15.6.2"
-  },
   "dependencies": {
     "swagger-client": "^3.8.21"
   },
@@ -44,5 +41,8 @@
     "jest": "^23.6.0",
     "prettier": "^1.14.3",
     "regenerator-runtime": "^0.12.1"
+  },
+  "peerDependencies": {
+    "prop-types": "^15.6.2"
   }
 }
