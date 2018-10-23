@@ -1,0 +1,7 @@
+language: node_js
+node_js:
+  - "node"
+  - "lts/boron"
+  - "lts/carbon"
+  - "lts/*"
+sudo: false # use container based environmnt
