@@ -1,65 +1,65 @@
+import PropTypes from 'prop-types';
 import Swagger from 'swagger-client';
 
-const PT_PREFIX = 'PropTypes';
-
-const stringify = data => JSON.stringify(data);
-
-const prefix = prop => `${PT_PREFIX}.${prop}`;
-
-const objectPropType = (obj, refBase = '') => {
+const objectPropType = (obj, refBase) => {
   const keys = Object.keys(obj.properties);
 
   if (keys.length === 0) {
-    return 'object';
+    return PropTypes.object;
   }
 
-  const props = keys.map(key => {
-    const objDef = obj.properties[key];
-    const required =
-      obj.required && obj.required.includes(key) ? '.isRequired' : '';
+  const shape = {};
 
-    return `  ${stringify(key)}: ${propFromDef(objDef, refBase)}${required}`;
+  keys.forEach(key => {
+    const objDef = obj.properties[key];
+    const prop = propFromDef(objDef, refBase);
+    const required = obj.required && obj.required.includes(key);
+
+    shape[key] = required ? prop.required : prop;
   });
 
-  return prefix('exact({\n') + props.join(',\n') + '\n})';
+  return PropTypes.exact(shape);
 };
 
 // -----------------------------------------------------------------------------
 
-export const propFromDef = (def, refBase = '') => {
+export const propFromDef = (def, refBase) => {
   if (def.$ref) {
     const refMatches = def.$ref.match(/#\/definitions\/(.*)/);
-    return `${refBase}${refMatches[1]}`;
+    return refBase[refMatches[1]];
   }
 
   if (def.enum) {
-    return prefix('oneOf(' + stringify(def.enum) + ')');
+    return PropTypes.oneOf(def.enum);
   }
 
   switch (def.type) {
     case 'array':
-      return prefix('arrayOf(' + propFromDef(def.items, refBase) + ')');
+      return PropTypes.arrayOf(propFromDef(def.items, refBase));
 
     case 'boolean':
-      return prefix('bool');
+      return PropTypes.bool;
 
     case 'integer':
     case 'number':
-      return prefix('number');
+      return PropTypes.number;
 
     case 'object':
       return objectPropType(def, refBase);
 
     case 'string':
-      return prefix('string');
+      return PropTypes.string;
 
     default:
       throw Error(`Unknown definition type "${def.type}"`);
   }
 };
 
-export const propsFromDefs = (defs, refBase = '') => {
+export const propsFromDefs = defs => {
   const props = {};
+
+  // TODO: process defs that have references after those references are created
+
   Object.keys(defs).forEach(
     key => (props[key] = propFromDef(defs[key], refBase))
   );
@@ -70,21 +70,4 @@ export const propsFromDefs = (defs, refBase = '') => {
 export const defsFromUrl = async url => {
   const response = await Swagger.http({ url });
   return response.body.definitions;
-};
-
-export const moduleFromDefs = swaggerDefs => {
-  const PROPS_REF_BASE = 'props';
-  const props = propsFromDefs(swaggerDefs, `${PROPS_REF_BASE}.`);
-  const propNames = Object.keys(props);
-
-  return `import ${PT_PREFIX} from 'prop-types';
-
-const ${PROPS_REF_BASE} = {};
-
-${propNames
-    .map(propName => `${PROPS_REF_BASE}.${propName} = ${props[propName]}`)
-    .join(';\n\n')};
-
-export default props;
-`;
 };

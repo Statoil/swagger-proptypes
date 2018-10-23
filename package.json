@@ -25,6 +25,9 @@
     "url": "https://github.com/Statoil/swagger-proptypes/issues"
   },
   "homepage": "https://github.com/Statoil/swagger-proptypes#readme",
+  "peerDependencies": {
+    "prop-types": "^15.6.2"
+  },
   "dependencies": {
     "swagger-client": "^3.8.21"
   },
