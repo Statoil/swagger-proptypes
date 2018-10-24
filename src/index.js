@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import Swagger from 'swagger-client';
 
 const objectPropType = (obj, refBase, nakedObj = false) => {
   const keys = Object.keys(obj.properties);
@@ -73,11 +72,6 @@ export const propsFromDefs = defs => {
   return props;
 };
 
-export const defsFromUrl = async url => {
-  const response = await Swagger.http({ url });
-  return response.body.definitions;
-};
-
 export const check = (...args) => {
   if (!console) {
     throw Error('Cannot track checkPropTypes behaviour without a console');
@@ -93,3 +87,6 @@ export const check = (...args) => {
   cpt.apply(undefined, args);
   console.error = consoleError;
 };
+
+export const checkExact = (name, specs, values, ...args) =>
+  check({ [name]: PropTypes.exact(specs) }, { [name]: values }, ...args);

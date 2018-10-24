@@ -41,14 +41,15 @@ const propType = propFromDef(swaggerDef);
 PropTypes.arrayOf(PropTypes.string)
 ```
 
-There is also `defsFromUrl()`, a small convenience function to fetch a Swagger JSON file and retrieve the definitions, which can be passed to `propsFromDefs()`.
+You can use `request-promise-native` or something like it to retrieve a Swagger JSON file. The definitions within can then be passed to `propsFromDefs()`.
 
 ```js
+import rpn from 'request-promise-native';
 import { defsFromUrl, propsFromDefs } from 'swagger-proptypes';
 
 (async () => {
-  const swaggerDefs = await defsFromUrl('https://petstore.swagger.io/v2/swagger.json');
-  const propTypes = propsFromDefs(swaggerDefs);
+  const swaggerJson = await rpn('https://petstore.swagger.io/v2/swagger.json', { json: true });
+  const propTypes = propsFromDefs(swaggerJson.definitions);
 })();
 ```
 
@@ -70,5 +71,26 @@ const anotherObject = {
 
 check({ someProperty: propType }, anObject);  // Will pass
 check({ someProperty: propType }, anotherObject);  // Will throw
+
+```
+
+Note that `check()` verifies the validity of the objects's properties; not of the object itself. That is, if there are eextraneous properties, they won't fail validation. If you want to throw an error in that case, use the `checkExact()` function instead. You must provide a name for the type of object being tested, so that validation messages make sense.
+
+```js
+import { propFromDef, checkExact } from 'swagger-proptypes';
+
+const swaggerDef = { type: 'array', items: { type: 'string' } };
+const propType = propFromDef(swaggerDef);
+
+const anObject = {
+  someProperty: ['one', 'two']
+};
+const anotherObject = {
+  someProperty: ['one', 'two'],
+  extra: true,
+};
+
+checkExact('myObjectType', { someProperty: propType }, anObject);  // Will pass
+checkExact('myObjectType', { someProperty: propType }, anotherObject);  // Will throw
 
 ```

@@ -25,9 +25,7 @@
     "url": "https://github.com/Statoil/swagger-proptypes/issues"
   },
   "homepage": "https://github.com/Statoil/swagger-proptypes#readme",
-  "dependencies": {
-    "swagger-client": "^3.8.21"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.1.2",
     "@babel/core": "^7.1.2",
