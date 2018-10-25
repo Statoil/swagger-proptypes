@@ -88,5 +88,5 @@ export const check = (...args) => {
   console.error = consoleError;
 };
 
-export const checkExact = (name, specs, values, ...args) =>
-  check({ [name]: PropTypes.exact(specs) }, { [name]: values }, ...args);
+export const checkExact = (name, specs, values) =>
+  check({ [name]: PropTypes.exact(specs) }, { [name]: values }, 'prop', name);
