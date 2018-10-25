@@ -3,11 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.check = exports.defsFromUrl = exports.propsFromDefs = exports.propFromDef = void 0;
+exports.checkExact = exports.check = exports.propsFromDefs = exports.propFromDef = void 0;
 
 var _propTypes = _interopRequireDefault(require("prop-types"));
-
-var _swaggerClient = _interopRequireDefault(require("swagger-client"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -80,15 +78,6 @@ const propsFromDefs = defs => {
 
 exports.propsFromDefs = propsFromDefs;
 
-const defsFromUrl = async url => {
-  const response = await _swaggerClient.default.http({
-    url
-  });
-  return response.body.definitions;
-};
-
-exports.defsFromUrl = defsFromUrl;
-
 const check = (...args) => {
   if (!console) {
     throw Error('Cannot track checkPropTypes behaviour without a console');
@@ -107,3 +96,11 @@ const check = (...args) => {
 };
 
 exports.check = check;
+
+const checkExact = (name, specs, values, ...args) => check({
+  [name]: _propTypes.default.exact(specs)
+}, {
+  [name]: values
+}, ...args);
+
+exports.checkExact = checkExact;
