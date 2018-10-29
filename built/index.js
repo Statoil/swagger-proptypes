@@ -71,8 +71,13 @@ const propsFromDefs = defs => {
   const props = {}; // TODO: we must process defs that have references only after those
   // references are created
 
-  Object.keys(defs).forEach( // key => (props[key] = propFromDef(defs[key], props))
-  key => props[key] = objectPropType(defs[key], props, true));
+  Object.keys(defs).forEach(key => {
+    if (defs[key].type === 'object') {
+      props[key] = objectPropType(defs[key], props, true);
+    } else {
+      console.log(`Skipping non-object definition "${key}"`);
+    }
+  });
   return props;
 };
 
@@ -97,10 +102,10 @@ const check = (...args) => {
 
 exports.check = check;
 
-const checkExact = (name, specs, values, ...args) => check({
+const checkExact = (name, specs, values) => check({
   [name]: _propTypes.default.exact(specs)
 }, {
   [name]: values
-}, ...args);
+}, 'prop', name);
 
 exports.checkExact = checkExact;

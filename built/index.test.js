@@ -323,3 +323,60 @@ describe('full definitions', () => {
     expect(fn).toThrow();
   });
 });
+describe('non-object full definitions', () => {
+  let props;
+  beforeEach(() => {
+    props = (0, _.propsFromDefs)({
+      DefOne: {
+        type: 'object',
+        properties: {
+          one: {
+            type: 'string'
+          },
+          two: {
+            type: 'number'
+          }
+        },
+        required: ['two']
+      },
+      DefTwo: {
+        type: 'object',
+        properties: {
+          one: {
+            type: 'boolean'
+          },
+          two: {
+            type: 'string',
+            enum: ['a', 'b', 'c']
+          },
+          three: {
+            type: 'object',
+            properties: {
+              four: {
+                type: 'string'
+              },
+              five: {
+                type: 'string'
+              }
+            }
+          }
+        }
+      },
+      DefThree: {
+        type: 'string'
+      }
+    });
+  });
+  test('check() ignores non-object definition, even if correct', () => {
+    const fn = () => (0, _.check)(props.DefThree, 'I am a string');
+
+    expect(fn).not.toThrow();
+  });
+  test('check() ignores non-object definition, even if incorrect', () => {
+    const fn = () => (0, _.check)(props.DefThree, {
+      thisIs: 'wrong'
+    });
+
+    expect(fn).not.toThrow();
+  });
+});
