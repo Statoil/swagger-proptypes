@@ -64,10 +64,13 @@ export const propsFromDefs = defs => {
   // TODO: we must process defs that have references only after those
   // references are created
 
-  Object.keys(defs).forEach(
-    // key => (props[key] = propFromDef(defs[key], props))
-    key => (props[key] = objectPropType(defs[key], props, true))
-  );
+  Object.keys(defs).forEach(key => {
+    if (defs[key].type === 'object') {
+      props[key] = objectPropType(defs[key], props, true);
+    } else {
+      console.log(`Skipping non-object definition "${key}"`);
+    }
+  });
 
   return props;
 };
