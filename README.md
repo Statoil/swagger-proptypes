@@ -45,7 +45,7 @@ You can use `request-promise-native` or something like it to retrieve a Swagger 
 
 ```js
 import rpn from 'request-promise-native';
-import { defsFromUrl, propsFromDefs } from 'swagger-proptypes';
+import { propsFromDefs } from 'swagger-proptypes';
 
 (async () => {
   const swaggerJson = await rpn('https://petstore.swagger.io/v2/swagger.json', { json: true });
@@ -74,7 +74,7 @@ check({ someProperty: propType }, anotherObject);  // Will throw
 
 ```
 
-Note that `check()` verifies the validity of the objects's properties; not of the object itself. That is, if there are extraneous properties, they won't fail validation. If you want to throw an error in that case, use the `checkExact()` function instead. You must provide a name for the type of object being tested, so that validation messages make sense.
+Note that `check()` verifies the validity of the objects properties; not of the object itself. That is, if there are extraneous properties, they won't fail validation. If you want to throw an error in that case, use the `checkExact()` function instead. You must provide a name for the type of object being tested, so that validation messages make sense.
 
 ```js
 import { propFromDef, checkExact } from 'swagger-proptypes';

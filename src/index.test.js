@@ -28,7 +28,9 @@ describe('individual props', () => {
     let props;
 
     beforeEach(() => {
-      props = { p: propFromDef({ type: 'array', items: { type: 'string' } }) };
+      props = {
+        p: propFromDef({ type: 'array', items: { type: 'string' } }),
+      };
     });
 
     test('no errors on success', () => {
@@ -46,7 +48,9 @@ describe('individual props', () => {
     let props;
 
     beforeEach(() => {
-      props = { p: propFromDef({ type: 'array', items: { type: 'number' } }) };
+      props = {
+        p: propFromDef({ type: 'array', items: { type: 'number' } }),
+      };
     });
 
     test('no errors on success', () => {
@@ -64,7 +68,9 @@ describe('individual props', () => {
     let props;
 
     beforeEach(() => {
-      props = { p: propFromDef({ type: 'string', enum: ['one', 'two'] }) };
+      props = {
+        p: propFromDef({ type: 'string', enum: ['one', 'two'] }),
+      };
     });
 
     test('no errors on success', () => {
@@ -134,7 +140,9 @@ describe('individual props', () => {
     let refBase;
 
     beforeEach(() => {
-      refBase = { SomeDef: PropTypes.bool };
+      refBase = {
+        SomeDef: { three: PropTypes.bool },
+      };
       props = {
         p: propFromDef(
           {
@@ -150,24 +158,13 @@ describe('individual props', () => {
     });
 
     test('no errors on success', () => {
-      const fn = () => check(props, { p: { two: true } });
+      const fn = () => check(props, { p: { two: { three: true } } });
       expect(fn).not.toThrow();
     });
 
     test('errors on failure', () => {
       const fn = () => check(props, { p: { two: 3 } });
       expect(fn).toThrow();
-    });
-
-    test('errors when missing reference', () => {
-      expect(() =>
-        propFromDef({
-          type: 'object',
-          properties: {
-            one: { $ref: '#/definitions/SomeOtherDef' },
-          },
-        })
-      ).toThrow();
     });
   });
 });
@@ -238,7 +235,6 @@ describe('full definitions', () => {
   });
 });
 
-
 describe('non-object full definitions', () => {
   let props;
 
@@ -280,5 +276,196 @@ describe('non-object full definitions', () => {
   test('check() ignores non-object definition, even if incorrect', () => {
     const fn = () => check(props.DefThree, { thisIs: 'wrong' });
     expect(fn).not.toThrow();
+  });
+});
+
+describe('complex references', () => {
+  let props;
+
+  beforeEach(() => {
+    props = propsFromDefs({
+      Pet: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: {
+            type: 'string',
+          },
+          tags: {
+            type: 'array',
+            items: { $ref: '#/definitions/Tag' },
+          },
+        },
+      },
+      Tag: {
+        type: 'object',
+        required: ['id', 'name'],
+        properties: {
+          id: {
+            type: 'integer',
+          },
+          name: {
+            type: 'string',
+          },
+        },
+      },
+    });
+  });
+
+  test('Valid simple data should pass', () => {
+    const pet = {
+      name: 'My Pet',
+    };
+
+    const fn = () => check(props.Pet, pet);
+    expect(fn).not.toThrow();
+  });
+
+  test('Valid nested data should pass', () => {
+    const pet = {
+      name: 'My Pet',
+      tags: [
+        { id: 1, name: 'cute' },
+        { id: 2, name: 'cuter' },
+        { id: 1, name: 'cutest' },
+      ],
+    };
+
+    const fn = () => check(props.Pet, pet);
+    expect(fn).not.toThrow();
+  });
+
+  test('Invalid simple data should fail', () => {
+    const pet = {
+      NoName: 'My Pet',
+    };
+
+    const fn = () => check(props.Pet, pet);
+    expect(fn).toThrow();
+  });
+
+  test('Invalid nested data should fail', () => {
+    const pet = {
+      name: 'My Pet',
+      tags: [
+        { id: 1, name: 'cute' },
+        { id: 'oops', name: 'cuter' },
+        { id: 1, name: 'cutest' },
+      ],
+    };
+
+    const fn = () => check(props.Pet, pet);
+    expect(fn).toThrow();
+  });
+});
+
+describe('circular references', () => {
+  let props;
+
+  beforeEach(() => {
+    props = propsFromDefs({
+      Node: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: {
+            type: 'string',
+          },
+          ancestors: {
+            type: 'array',
+            items: { $ref: '#/definitions/Node' },
+          },
+          descendants: {
+            type: 'array',
+            items: { $ref: '#/definitions/Node' },
+          },
+        },
+      },
+    });
+  });
+
+  test('circular definitions', () => {
+    const node = {
+      name: 'My node',
+      ancestors: [
+        { name: 'Parent A', ancestors: [] },
+        { name: 'Parent B', ancestors: [] },
+      ],
+    };
+
+    const fn = () => check(props.Node, node);
+    expect(fn).not.toThrow();
+  });
+
+  test('tight circular properties', () => {
+    const node = {
+      name: 'My node',
+    };
+
+    node.ancestors = [node];
+
+    const fn = () => check(props.Node, node);
+    expect(fn).not.toThrow();
+  });
+
+  test('nested circular properties', () => {
+    const node1 = {
+      name: 'My node',
+      ancestors: [],
+    };
+
+    const node2 = {
+      name: 'Another node',
+      ancestors: [node1],
+    };
+
+    node1.ancestors.push(node2);
+
+    const fn = () => check(props.Node, node1);
+    expect(fn).not.toThrow();
+  });
+
+  test('deeply nested circular properties', () => {
+    const node1 = {
+      name: 'My node',
+      ancestors: [],
+    };
+
+    const node2 = {
+      name: 'Another node',
+      ancestors: [node1],
+    };
+
+    const node3 = {
+      name: 'Another node',
+      ancestors: [node2],
+    };
+
+    node1.ancestors.push(node3);
+
+    const fn = () => check(props.Node, node1);
+    expect(fn).not.toThrow();
+  });
+
+  test('invalid deeply nested circular properties should fail', () => {
+    const node1 = {
+      name: 'My node',
+      ancestors: [],
+    };
+
+    const node2 = {
+      name: 'Another node',
+      ancestors: [node1],
+    };
+
+    const node3 = {
+      NotAname: 'Another node',
+      ancestors: [node2],
+    };
+
+    node1.ancestors.push(node3);
+
+    const fn = () => check(props.Node, node1);
+    expect(fn).toThrow();
   });
 });

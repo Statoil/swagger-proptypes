@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 
-const PENDING_REF = Symbol('Pending reference');
+const PROP_CHECKED_FLAG = Symbol();
+const isObject = input => input === Object(input);
 
 const objectPropType = (obj, refLookup, nakedObj = false) => {
   const keys = Object.keys(obj.properties);
@@ -10,63 +11,75 @@ const objectPropType = (obj, refLookup, nakedObj = false) => {
   }
 
   const shape = {};
-  const pendingRefs = [];
 
   keys.forEach(key => {
     const objDef = obj.properties[key];
-    const prop = propFromDef(objDef, refLookup);
-    const required = !!obj.required && obj.required.includes(key);
+    const isRequired = !!obj.required && obj.required.includes(key);
+    const prop = makePropFromDef(isRequired, objDef, refLookup);
 
-    if (prop.valueOf() === PENDING_REF) {
-      prop.key = key;
-      prop.required = true;
-      pendingRefs.push(prop);
-    } else {
-      shape[key] = required ? prop.isRequired : prop;
-
-      // // Check if there were any pending refs awaiting for this key
-
-      // let pendingRefsIdx = pendingRefs.length;
-
-      // while (pendingRefsIdx--) {
-      //   const pendingRef = pendingRefs[pendingRefsIdx];
-
-      //   if (key === pendingRef.refName) {
-      //     const refProp = propFromDef(pendingRef.def, refLookup);
-      //     shape[pendingRef.key] = pendingRef.required
-      //       ? refProp.isRequired
-      //       : prop;
-      //   }
-      //   pendingRefs.splice(pendingRefsIdx, 1);
-      // }
-    }
+    shape[key] = isRequired ? prop.isRequired : prop;
   });
 
   return nakedObj ? shape : PropTypes.exact(shape);
 };
 
-// -----------------------------------------------------------------------------
+const makePropTypeReference = (isRequired, refName, refLookup) => (
+  props,
+  propName
+) => {
+  if (!refLookup) {
+    throw Error(`No lookup provided for reference "${refName}"`);
+  }
 
-export const propFromDef = (def, refLookup) => {
+  const ref = refLookup[refName];
+
+  if (!ref) {
+    throw Error(`No reference "${refName}" found`);
+  }
+
+  const description = Array.isArray(props)
+    ? `${refName} (index ${propName} in array)`
+    : `${refName} (referenced as "${propName}")`;
+
+  const propValue = props[propName];
+
+  if (propValue == null) {
+    if (isRequired) {
+      if (propValue === null) {
+        throw Error(
+          `The prop \`${description}\` is required, but its value is \`null\`.`
+        );
+      }
+      throw Error(
+        `The prop \`${description}\` is required, but its value is \`undefined\`.`
+      );
+    }
+
+    return;
+  }
+
+  if (!isObject(propValue)) {
+    throw Error(`\`${description}\` can't be a primitive value ("${props}")`);
+  }
+
+  // prevent circular recursion
+
+  if (propValue[PROP_CHECKED_FLAG]) {
+    return;
+  }
+
+  propValue[PROP_CHECKED_FLAG] = true;
+
+  check(ref, propValue, 'prop', description);
+  delete propValue[PROP_CHECKED_FLAG];
+};
+
+export const makePropFromDef = (isRequired, def, refLookup) => {
   if (def.$ref) {
     const refMatches = def.$ref.match(/#\/definitions\/(.*)/);
     const refName = refMatches[1];
 
-    if (!refLookup) {
-      throw Error(`Cannot find definition for reference "${refName}"`);
-    }
-
-    const ref = refLookup[refName];
-
-    if (ref === undefined) {
-      // ref = Object(PENDING_REF);
-      // ref.refName = refName;
-      // ref.def = def;
-
-      return () => refLookup[refName];
-    }
-
-    return ref;
+    return makePropTypeReference(isRequired, refName, refLookup);
   }
 
   if (def.enum) {
@@ -75,19 +88,7 @@ export const propFromDef = (def, refLookup) => {
 
   switch (def.type) {
     case 'array':
-      console.log('will check array of', def.items);
-      return PropTypes.arrayOf(
-        (propValue, key, componentName, location, propFullName) => {
-          const item = propValue[key];
-          const name = `arrayOf(${refLookup})`;
-          PropTypes.checkPropTypes(
-            { [name]: propFromDef(def.items, refLookup) },
-            { [name]: item },
-            propFullName,
-            componentName
-          );
-        }
-      );
+      return PropTypes.arrayOf(makePropFromDef(false, def.items, refLookup));
 
     case 'boolean':
       return PropTypes.bool;
@@ -107,11 +108,12 @@ export const propFromDef = (def, refLookup) => {
   }
 };
 
+// -----------------------------------------------------------------------------
+
+export const propFromDef = makePropFromDef.bind(undefined, false);
+
 export const propsFromDefs = defs => {
   const props = {};
-
-  // TODO: we must process defs that have references only after those
-  // references are created
 
   Object.keys(defs).forEach(key => {
     if (defs[key].type === 'object') {
@@ -132,7 +134,7 @@ export const check = (...args) => {
   const cpt = require('prop-types').checkPropTypes;
   const consoleError = console.error;
 
-  console.error = msg => {
+  console.error = function(msg) {
     throw Error(msg);
   };
 
