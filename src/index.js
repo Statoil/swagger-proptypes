@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
 
-const objectPropType = (obj, refBase, nakedObj = false) => {
+const PENDING_REF = Symbol('Pending reference');
+
+const objectPropType = (obj, refLookup, nakedObj = false) => {
   const keys = Object.keys(obj.properties);
 
   if (keys.length === 0) {
@@ -8,13 +10,36 @@ const objectPropType = (obj, refBase, nakedObj = false) => {
   }
 
   const shape = {};
+  const pendingRefs = [];
 
   keys.forEach(key => {
     const objDef = obj.properties[key];
-    const prop = propFromDef(objDef, refBase);
+    const prop = propFromDef(objDef, refLookup);
     const required = !!obj.required && obj.required.includes(key);
 
-    shape[key] = required ? prop.isRequired : prop;
+    if (prop.valueOf() === PENDING_REF) {
+      prop.key = key;
+      prop.required = true;
+      pendingRefs.push(prop);
+    } else {
+      shape[key] = required ? prop.isRequired : prop;
+
+      // // Check if there were any pending refs awaiting for this key
+
+      // let pendingRefsIdx = pendingRefs.length;
+
+      // while (pendingRefsIdx--) {
+      //   const pendingRef = pendingRefs[pendingRefsIdx];
+
+      //   if (key === pendingRef.refName) {
+      //     const refProp = propFromDef(pendingRef.def, refLookup);
+      //     shape[pendingRef.key] = pendingRef.required
+      //       ? refProp.isRequired
+      //       : prop;
+      //   }
+      //   pendingRefs.splice(pendingRefsIdx, 1);
+      // }
+    }
   });
 
   return nakedObj ? shape : PropTypes.exact(shape);
@@ -22,14 +47,26 @@ const objectPropType = (obj, refBase, nakedObj = false) => {
 
 // -----------------------------------------------------------------------------
 
-export const propFromDef = (def, refBase) => {
+export const propFromDef = (def, refLookup) => {
   if (def.$ref) {
     const refMatches = def.$ref.match(/#\/definitions\/(.*)/);
-    const ref = refBase[refMatches[1]];
-    if (ref === undefined) {
-      throw Error(`Cannot find definition for reference "${refMatches[1]}"`);
+    const refName = refMatches[1];
+
+    if (!refLookup) {
+      throw Error(`Cannot find definition for reference "${refName}"`);
     }
-    return refBase[refMatches[1]];
+
+    const ref = refLookup[refName];
+
+    if (ref === undefined) {
+      // ref = Object(PENDING_REF);
+      // ref.refName = refName;
+      // ref.def = def;
+
+      return () => refLookup[refName];
+    }
+
+    return ref;
   }
 
   if (def.enum) {
@@ -38,7 +75,19 @@ export const propFromDef = (def, refBase) => {
 
   switch (def.type) {
     case 'array':
-      return PropTypes.arrayOf(propFromDef(def.items, refBase));
+      console.log('will check array of', def.items);
+      return PropTypes.arrayOf(
+        (propValue, key, componentName, location, propFullName) => {
+          const item = propValue[key];
+          const name = `arrayOf(${refLookup})`;
+          PropTypes.checkPropTypes(
+            { [name]: propFromDef(def.items, refLookup) },
+            { [name]: item },
+            propFullName,
+            componentName
+          );
+        }
+      );
 
     case 'boolean':
       return PropTypes.bool;
@@ -48,7 +97,7 @@ export const propFromDef = (def, refBase) => {
       return PropTypes.number;
 
     case 'object':
-      return objectPropType(def, refBase);
+      return objectPropType(def, refLookup);
 
     case 'string':
       return PropTypes.string;
