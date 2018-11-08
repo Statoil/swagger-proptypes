@@ -3,13 +3,17 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.checkExact = exports.check = exports.propsFromDefs = exports.propFromDef = void 0;
+exports.checkExact = exports.check = exports.propsFromDefs = exports.propFromDef = exports.makePropFromDef = void 0;
 
 var _propTypes = _interopRequireDefault(require("prop-types"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const objectPropType = (obj, refBase, nakedObj = false) => {
+const PROP_CHECKED_FLAG = Symbol();
+
+const isObject = input => input === Object(input);
+
+const objectPropType = (obj, refLookup, nakedObj = false) => {
   const keys = Object.keys(obj.properties);
 
   if (keys.length === 0) {
@@ -19,24 +23,58 @@ const objectPropType = (obj, refBase, nakedObj = false) => {
   const shape = {};
   keys.forEach(key => {
     const objDef = obj.properties[key];
-    const prop = propFromDef(objDef, refBase);
-    const required = !!obj.required && obj.required.includes(key);
-    shape[key] = required ? prop.isRequired : prop;
+    const isRequired = !!obj.required && obj.required.includes(key);
+    const prop = makePropFromDef(isRequired, objDef, refLookup);
+    shape[key] = isRequired ? prop.isRequired : prop;
   });
   return nakedObj ? shape : _propTypes.default.exact(shape);
-}; // -----------------------------------------------------------------------------
+};
 
+const makePropTypeReference = (isRequired, refName, refLookup) => (props, propName) => {
+  if (!refLookup) {
+    throw Error(`No lookup provided for reference "${refName}"`);
+  }
 
-const propFromDef = (def, refBase) => {
-  if (def.$ref) {
-    const refMatches = def.$ref.match(/#\/definitions\/(.*)/);
-    const ref = refBase[refMatches[1]];
+  const ref = refLookup[refName];
 
-    if (ref === undefined) {
-      throw Error(`Cannot find definition for reference "${refMatches[1]}"`);
+  if (!ref) {
+    throw Error(`No reference "${refName}" found`);
+  }
+
+  const description = Array.isArray(props) ? `${refName} (index ${propName} in array)` : `${refName} (referenced as "${propName}")`;
+  const propValue = props[propName];
+
+  if (propValue == null) {
+    if (isRequired) {
+      if (propValue === null) {
+        throw Error(`The prop \`${description}\` is required, but its value is \`null\`.`);
+      }
+
+      throw Error(`The prop \`${description}\` is required, but its value is \`undefined\`.`);
     }
 
-    return refBase[refMatches[1]];
+    return;
+  }
+
+  if (!isObject(propValue)) {
+    throw Error(`\`${description}\` can't be a primitive value ("${props}")`);
+  } // prevent circular recursion
+
+
+  if (propValue[PROP_CHECKED_FLAG]) {
+    return;
+  }
+
+  propValue[PROP_CHECKED_FLAG] = true;
+  check(ref, propValue, 'prop', description);
+  delete propValue[PROP_CHECKED_FLAG];
+};
+
+const makePropFromDef = (isRequired, def, refLookup) => {
+  if (def.$ref) {
+    const refMatches = def.$ref.match(/#\/definitions\/(.*)/);
+    const refName = refMatches[1];
+    return makePropTypeReference(isRequired, refName, refLookup);
   }
 
   if (def.enum) {
@@ -45,7 +83,7 @@ const propFromDef = (def, refBase) => {
 
   switch (def.type) {
     case 'array':
-      return _propTypes.default.arrayOf(propFromDef(def.items, refBase));
+      return _propTypes.default.arrayOf(makePropFromDef(false, def.items, refLookup));
 
     case 'boolean':
       return _propTypes.default.bool;
@@ -55,7 +93,7 @@ const propFromDef = (def, refBase) => {
       return _propTypes.default.number;
 
     case 'object':
-      return objectPropType(def, refBase);
+      return objectPropType(def, refLookup);
 
     case 'string':
       return _propTypes.default.string;
@@ -63,14 +101,15 @@ const propFromDef = (def, refBase) => {
     default:
       throw Error(`Unknown definition type "${def.type}"`);
   }
-};
+}; // -----------------------------------------------------------------------------
 
+
+exports.makePropFromDef = makePropFromDef;
+const propFromDef = makePropFromDef.bind(undefined, false);
 exports.propFromDef = propFromDef;
 
 const propsFromDefs = defs => {
-  const props = {}; // TODO: we must process defs that have references only after those
-  // references are created
-
+  const props = {};
   Object.keys(defs).forEach(key => {
     if (defs[key].type === 'object') {
       props[key] = objectPropType(defs[key], props, true);
@@ -92,7 +131,7 @@ const check = (...args) => {
 
   const consoleError = console.error;
 
-  console.error = msg => {
+  console.error = function (msg) {
     throw Error(msg);
   };
 

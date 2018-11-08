@@ -180,7 +180,9 @@ describe('individual props', () => {
     let refBase;
     beforeEach(() => {
       refBase = {
-        SomeDef: _propTypes.default.bool
+        SomeDef: {
+          three: _propTypes.default.bool
+        }
       };
       props = {
         p: (0, _.propFromDef)({
@@ -199,7 +201,9 @@ describe('individual props', () => {
     test('no errors on success', () => {
       const fn = () => (0, _.check)(props, {
         p: {
-          two: true
+          two: {
+            three: true
+          }
         }
       });
 
@@ -213,16 +217,6 @@ describe('individual props', () => {
       });
 
       expect(fn).toThrow();
-    });
-    test('errors when missing reference', () => {
-      expect(() => (0, _.propFromDef)({
-        type: 'object',
-        properties: {
-          one: {
-            $ref: '#/definitions/SomeOtherDef'
-          }
-        }
-      })).toThrow();
     });
   });
 });
@@ -378,5 +372,202 @@ describe('non-object full definitions', () => {
     });
 
     expect(fn).not.toThrow();
+  });
+});
+describe('complex references', () => {
+  let props;
+  beforeEach(() => {
+    props = (0, _.propsFromDefs)({
+      Pet: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: {
+            type: 'string'
+          },
+          tags: {
+            type: 'array',
+            items: {
+              $ref: '#/definitions/Tag'
+            }
+          }
+        }
+      },
+      Tag: {
+        type: 'object',
+        required: ['id', 'name'],
+        properties: {
+          id: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      }
+    });
+  });
+  test('Valid simple data should pass', () => {
+    const pet = {
+      name: 'My Pet'
+    };
+
+    const fn = () => (0, _.check)(props.Pet, pet);
+
+    expect(fn).not.toThrow();
+  });
+  test('Valid nested data should pass', () => {
+    const pet = {
+      name: 'My Pet',
+      tags: [{
+        id: 1,
+        name: 'cute'
+      }, {
+        id: 2,
+        name: 'cuter'
+      }, {
+        id: 1,
+        name: 'cutest'
+      }]
+    };
+
+    const fn = () => (0, _.check)(props.Pet, pet);
+
+    expect(fn).not.toThrow();
+  });
+  test('Invalid simple data should fail', () => {
+    const pet = {
+      NoName: 'My Pet'
+    };
+
+    const fn = () => (0, _.check)(props.Pet, pet);
+
+    expect(fn).toThrow();
+  });
+  test('Invalid nested data should fail', () => {
+    const pet = {
+      name: 'My Pet',
+      tags: [{
+        id: 1,
+        name: 'cute'
+      }, {
+        id: 'oops',
+        name: 'cuter'
+      }, {
+        id: 1,
+        name: 'cutest'
+      }]
+    };
+
+    const fn = () => (0, _.check)(props.Pet, pet);
+
+    expect(fn).toThrow();
+  });
+});
+describe('circular references', () => {
+  let props;
+  beforeEach(() => {
+    props = (0, _.propsFromDefs)({
+      Node: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: {
+            type: 'string'
+          },
+          ancestors: {
+            type: 'array',
+            items: {
+              $ref: '#/definitions/Node'
+            }
+          },
+          descendants: {
+            type: 'array',
+            items: {
+              $ref: '#/definitions/Node'
+            }
+          }
+        }
+      }
+    });
+  });
+  test('circular definitions', () => {
+    const node = {
+      name: 'My node',
+      ancestors: [{
+        name: 'Parent A',
+        ancestors: []
+      }, {
+        name: 'Parent B',
+        ancestors: []
+      }]
+    };
+
+    const fn = () => (0, _.check)(props.Node, node);
+
+    expect(fn).not.toThrow();
+  });
+  test('tight circular properties', () => {
+    const node = {
+      name: 'My node'
+    };
+    node.ancestors = [node];
+
+    const fn = () => (0, _.check)(props.Node, node);
+
+    expect(fn).not.toThrow();
+  });
+  test('nested circular properties', () => {
+    const node1 = {
+      name: 'My node',
+      ancestors: []
+    };
+    const node2 = {
+      name: 'Another node',
+      ancestors: [node1]
+    };
+    node1.ancestors.push(node2);
+
+    const fn = () => (0, _.check)(props.Node, node1);
+
+    expect(fn).not.toThrow();
+  });
+  test('deeply nested circular properties', () => {
+    const node1 = {
+      name: 'My node',
+      ancestors: []
+    };
+    const node2 = {
+      name: 'Another node',
+      ancestors: [node1]
+    };
+    const node3 = {
+      name: 'Another node',
+      ancestors: [node2]
+    };
+    node1.ancestors.push(node3);
+
+    const fn = () => (0, _.check)(props.Node, node1);
+
+    expect(fn).not.toThrow();
+  });
+  test('invalid deeply nested circular properties should fail', () => {
+    const node1 = {
+      name: 'My node',
+      ancestors: []
+    };
+    const node2 = {
+      name: 'Another node',
+      ancestors: [node1]
+    };
+    const node3 = {
+      NotAname: 'Another node',
+      ancestors: [node2]
+    };
+    node1.ancestors.push(node3);
+
+    const fn = () => (0, _.check)(props.Node, node1);
+
+    expect(fn).toThrow();
   });
 });
