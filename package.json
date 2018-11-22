@@ -1,6 +1,6 @@
 {
   "name": "swagger-proptypes",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "description": "Transform Swagger models into PropType specifications",
   "main": "built/index.js",
   "keywords": [
