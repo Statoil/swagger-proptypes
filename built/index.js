@@ -14,6 +14,14 @@ const PROP_CHECKED_FLAG = Symbol();
 const isObject = input => input === Object(input);
 
 const objectPropType = (obj, refLookup, nakedObj = false) => {
+  if (!obj.properties) {
+    if (obj.additionalProperties) {
+      return _propTypes.default.objectOf(makePropFromDef(false, obj.additionalProperties, refLookup));
+    }
+
+    return _propTypes.default.object;
+  }
+
   const keys = Object.keys(obj.properties);
 
   if (keys.length === 0) {

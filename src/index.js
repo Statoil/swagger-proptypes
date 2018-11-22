@@ -4,6 +4,16 @@ const PROP_CHECKED_FLAG = Symbol();
 const isObject = input => input === Object(input);
 
 const objectPropType = (obj, refLookup, nakedObj = false) => {
+  if (!obj.properties) {
+    if (obj.additionalProperties) {
+      return PropTypes.objectOf(
+        makePropFromDef(false, obj.additionalProperties, refLookup)
+      );
+    }
+
+    return PropTypes.object;
+  }
+
   const keys = Object.keys(obj.properties);
 
   if (keys.length === 0) {

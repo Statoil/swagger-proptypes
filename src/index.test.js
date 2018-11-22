@@ -84,7 +84,7 @@ describe('individual props', () => {
     });
   });
 
-  describe('objects', () => {
+  describe('keyed objects', () => {
     let props;
 
     beforeEach(() => {
@@ -130,6 +130,40 @@ describe('individual props', () => {
       const fn = () =>
         check(props, {
           p: { two: false, four: 'I should not be here' },
+        });
+      expect(fn).toThrow();
+    });
+  });
+
+  describe('unkeyed objects', () => {
+    let props;
+
+    beforeEach(() => {
+      props = {
+        p: propFromDef({
+          type: 'object',
+          additionalProperties: {
+            type: 'string',
+          },
+        }),
+      };
+    });
+
+    test('no errors on success', () => {
+      const fn = () =>
+        check(props, {
+          p: {
+            one: 'a string',
+            two: 'another string',
+          },
+        });
+      expect(fn).not.toThrow();
+    });
+
+    test('errors on wrong unkeyed type', () => {
+      const fn = () =>
+        check(props, {
+          p: { one: 'a string', two: 123 },
         });
       expect(fn).toThrow();
     });
