@@ -1,5 +1,5 @@
 [![Build
-Status](https://travis-ci.org/Statoil/swagger-proptypes.svg?branch=master)](https://travis-ci.org/Statoil/swagger-proptypes)
+Status](https://travis-ci.org/equinor/swagger-proptypes.svg?branch=master)](https://travis-ci.org/Statoil/swagger-proptypes)
 
 # swagger-proptypes
 
