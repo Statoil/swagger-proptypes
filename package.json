@@ -17,14 +17,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Statoil/swagger-proptypes.git"
+    "url": "git+https://github.com/equinor/swagger-proptypes.git"
   },
   "author": "Nelson Menezes <nemzes@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Statoil/swagger-proptypes/issues"
+    "url": "https://github.com/equinor/swagger-proptypes/issues"
   },
-  "homepage": "https://github.com/Statoil/swagger-proptypes#readme",
+  "homepage": "https://github.com/equinor/swagger-proptypes#readme",
   "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.1.2",
