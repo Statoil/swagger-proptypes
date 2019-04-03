@@ -47,18 +47,14 @@ describe('individual props', () => {
       };
     });
     test('no errors on success', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: ['an', 'array', 'of', 'strings']
-      });
-
-      expect(fn).not.toThrow();
+      })).toEqual([]);
     });
     test('errors on failure', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: ['an', 'array', 'of', 4, 'strings']
-      });
-
-      expect(fn).toThrow();
+      })).toHaveLength(1);
     });
   });
   describe('array of numbers', () => {
@@ -74,18 +70,14 @@ describe('individual props', () => {
       };
     });
     test('no errors on success', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: [1, 2, 3, 4, 5, 6]
-      });
-
-      expect(fn).not.toThrow();
+      })).toEqual([]);
     });
     test('errors on failure', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: [1, 2, 3, 4, '5', 6]
-      });
-
-      expect(fn).toThrow();
+      })).toHaveLength(1);
     });
   });
   describe('enums', () => {
@@ -99,18 +91,14 @@ describe('individual props', () => {
       };
     });
     test('no errors on success', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: 'two'
-      });
-
-      expect(fn).not.toThrow();
+      })).toEqual([]);
     });
     test('errors on failure', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: 'three'
-      });
-
-      expect(fn).toThrow();
+      })).toHaveLength(1);
     });
   });
   describe('keyed objects', () => {
@@ -143,16 +131,14 @@ describe('individual props', () => {
         }
       });
 
-      expect(fn).not.toThrow();
+      expect(fn()).toEqual([]);
     });
     test('no errors on missing optional props', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: {
           two: true
         }
-      });
-
-      expect(fn).not.toThrow();
+      })).toEqual([]);
     });
     test('errors on missing required props', () => {
       const fn = () => (0, _.check)(props, {
@@ -162,7 +148,7 @@ describe('individual props', () => {
         }
       });
 
-      expect(fn).toThrow();
+      expect(fn()).toHaveLength(1);
     });
     test('errors on extra props', () => {
       const fn = () => (0, _.check)(props, {
@@ -172,7 +158,7 @@ describe('individual props', () => {
         }
       });
 
-      expect(fn).toThrow();
+      expect(fn()).toHaveLength(1);
     });
   });
   describe('unkeyed objects', () => {
@@ -195,7 +181,7 @@ describe('individual props', () => {
         }
       });
 
-      expect(fn).not.toThrow();
+      expect(fn()).toEqual([]);
     });
     test('errors on wrong unkeyed type', () => {
       const fn = () => (0, _.check)(props, {
@@ -205,7 +191,7 @@ describe('individual props', () => {
         }
       });
 
-      expect(fn).toThrow();
+      expect(fn()).toHaveLength(1);
     });
   });
   describe('definition references', () => {
@@ -232,24 +218,20 @@ describe('individual props', () => {
       };
     });
     test('no errors on success', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: {
           two: {
             three: true
           }
         }
-      });
-
-      expect(fn).not.toThrow();
+      })).toEqual([]);
     });
     test('errors on failure', () => {
-      const fn = () => (0, _.check)(props, {
+      expect((0, _.check)(props, {
         p: {
           two: 3
         }
-      });
-
-      expect(fn).toThrow();
+      })).toHaveLength(1);
     });
   });
 });
@@ -295,59 +277,45 @@ describe('full definitions', () => {
     });
   });
   test('no errors on success (1)', () => {
-    const fn = () => (0, _.check)(props.DefOne, {
+    expect((0, _.check)(props.DefOne, {
       one: 'a string',
       two: 123
-    });
-
-    expect(fn).not.toThrow();
+    })).toEqual([]);
   });
   test('no errors on success (2)', () => {
-    const fn = () => (0, _.check)(props.DefTwo, {
+    expect((0, _.check)(props.DefTwo, {
       one: false,
       two: 'b'
-    });
-
-    expect(fn).not.toThrow();
+    })).toEqual([]);
   });
   test('errors on failure - missing required prop', () => {
-    const fn = () => (0, _.check)(props.DefOne, {
+    expect((0, _.check)(props.DefOne, {
       one: 'a string'
-    });
-
-    expect(fn).toThrow();
+    })).toHaveLength(1);
   });
   test('errors on failure - wrong prop type', () => {
-    const fn = () => (0, _.check)(props.DefOne, {
+    expect((0, _.check)(props.DefOne, {
       two: 'a string'
-    });
-
-    expect(fn).toThrow();
+    })).toHaveLength(1);
   });
   test('no errors on success - nested props', () => {
-    const fn = () => (0, _.check)(props.DefTwo, {
+    expect((0, _.check)(props.DefTwo, {
       three: {
         five: 'hello'
       }
-    });
-
-    expect(fn).not.toThrow();
+    })).toEqual([]);
   });
   test('errors on failure - nested extra props', () => {
-    const fn = () => (0, _.check)(props.DefTwo, {
+    expect((0, _.check)(props.DefTwo, {
       three: {
         six: 'hello'
       }
-    });
-
-    expect(fn).toThrow();
+    })).toHaveLength(1);
   });
   test('errors on failure - wrong enum value', () => {
-    const fn = () => (0, _.check)(props.DefTwo, {
+    expect((0, _.check)(props.DefTwo, {
       two: 'this is invalid'
-    });
-
-    expect(fn).toThrow();
+    })).toHaveLength(1);
   });
 });
 describe('non-object full definitions', () => {
@@ -395,16 +363,12 @@ describe('non-object full definitions', () => {
     });
   });
   test('check() ignores non-object definition, even if correct', () => {
-    const fn = () => (0, _.check)(props.DefThree, 'I am a string');
-
-    expect(fn).not.toThrow();
+    expect((0, _.check)(props.DefThree, 'I am a string')).toEqual([]);
   });
   test('check() ignores non-object definition, even if incorrect', () => {
-    const fn = () => (0, _.check)(props.DefThree, {
+    expect((0, _.check)(props.DefThree, {
       thisIs: 'wrong'
-    });
-
-    expect(fn).not.toThrow();
+    })).toEqual([]);
   });
 });
 describe('complex references', () => {
@@ -444,10 +408,7 @@ describe('complex references', () => {
     const pet = {
       name: 'My Pet'
     };
-
-    const fn = () => (0, _.check)(props.Pet, pet);
-
-    expect(fn).not.toThrow();
+    expect((0, _.check)(props.Pet, pet)).toEqual([]);
   });
   test('Valid nested data should pass', () => {
     const pet = {
@@ -463,19 +424,13 @@ describe('complex references', () => {
         name: 'cutest'
       }]
     };
-
-    const fn = () => (0, _.check)(props.Pet, pet);
-
-    expect(fn).not.toThrow();
+    expect((0, _.check)(props.Pet, pet)).toEqual([]);
   });
   test('Invalid simple data should fail', () => {
     const pet = {
       NoName: 'My Pet'
     };
-
-    const fn = () => (0, _.check)(props.Pet, pet);
-
-    expect(fn).toThrow();
+    expect((0, _.check)(props.Pet, pet)).toHaveLength(1);
   });
   test('Invalid nested data should fail', () => {
     const pet = {
@@ -491,10 +446,7 @@ describe('complex references', () => {
         name: 'cutest'
       }]
     };
-
-    const fn = () => (0, _.check)(props.Pet, pet);
-
-    expect(fn).toThrow();
+    expect((0, _.check)(props.Pet, pet)).toHaveLength(1);
   });
 });
 describe('circular references', () => {
@@ -535,20 +487,14 @@ describe('circular references', () => {
         ancestors: []
       }]
     };
-
-    const fn = () => (0, _.check)(props.Node, node);
-
-    expect(fn).not.toThrow();
+    expect((0, _.check)(props.Node, node)).toEqual([]);
   });
   test('tight circular properties', () => {
     const node = {
       name: 'My node'
     };
     node.ancestors = [node];
-
-    const fn = () => (0, _.check)(props.Node, node);
-
-    expect(fn).not.toThrow();
+    expect((0, _.check)(props.Node, node)).toEqual([]);
   });
   test('nested circular properties', () => {
     const node1 = {
@@ -560,10 +506,7 @@ describe('circular references', () => {
       ancestors: [node1]
     };
     node1.ancestors.push(node2);
-
-    const fn = () => (0, _.check)(props.Node, node1);
-
-    expect(fn).not.toThrow();
+    expect((0, _.check)(props.Node, node1)).toEqual([]);
   });
   test('deeply nested circular properties', () => {
     const node1 = {
@@ -579,10 +522,7 @@ describe('circular references', () => {
       ancestors: [node2]
     };
     node1.ancestors.push(node3);
-
-    const fn = () => (0, _.check)(props.Node, node1);
-
-    expect(fn).not.toThrow();
+    expect((0, _.check)(props.Node, node1)).toEqual([]);
   });
   test('invalid deeply nested circular properties should fail', () => {
     const node1 = {
@@ -598,9 +538,6 @@ describe('circular references', () => {
       ancestors: [node2]
     };
     node1.ancestors.push(node3);
-
-    const fn = () => (0, _.check)(props.Node, node1);
-
-    expect(fn).toThrow();
+    expect((0, _.check)(props.Node, node1)).toHaveLength(1);
   });
 });
