@@ -80,7 +80,12 @@ const makePropTypeReference = (isRequired, refName, refLookup) => (
 
   propValue[PROP_CHECKED_FLAG] = true;
 
-  check(ref, propValue, 'prop', description);
+  const childErrors = check(ref, propValue, 'prop', description);
+  
+  if (childErrors.length > 0) {
+    throw Error(childErrors);
+  }
+
   delete propValue[PROP_CHECKED_FLAG];
 };
 
@@ -141,15 +146,19 @@ export const check = (...args) => {
     throw Error('Cannot track checkPropTypes behaviour without a console');
   }
 
-  const cpt = require('prop-types').checkPropTypes;
+  const errors = []; // NB: Not working properly; only first error returned
   const consoleError = console.error;
 
   console.error = function(msg) {
-    throw Error(msg);
+    errors.push(msg);
+    PropTypes.resetWarningCache();
   };
 
-  cpt.apply(undefined, args);
+  PropTypes.resetWarningCache();
+  PropTypes.checkPropTypes(...args);
   console.error = consoleError;
+
+  return errors;
 };
 
 export const checkExact = (name, specs, values) =>

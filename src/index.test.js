@@ -34,13 +34,13 @@ describe('individual props', () => {
     });
 
     test('no errors on success', () => {
-      const fn = () => check(props, { p: ['an', 'array', 'of', 'strings'] });
-      expect(fn).not.toThrow();
+      expect(check(props, { p: ['an', 'array', 'of', 'strings'] })).toEqual([]);
     });
 
     test('errors on failure', () => {
-      const fn = () => check(props, { p: ['an', 'array', 'of', 4, 'strings'] });
-      expect(fn).toThrow();
+      expect(
+        check(props, { p: ['an', 'array', 'of', 4, 'strings'] })
+      ).toHaveLength(1);
     });
   });
 
@@ -54,13 +54,11 @@ describe('individual props', () => {
     });
 
     test('no errors on success', () => {
-      const fn = () => check(props, { p: [1, 2, 3, 4, 5, 6] });
-      expect(fn).not.toThrow();
+      expect(check(props, { p: [1, 2, 3, 4, 5, 6] })).toEqual([]);
     });
 
     test('errors on failure', () => {
-      const fn = () => check(props, { p: [1, 2, 3, 4, '5', 6] });
-      expect(fn).toThrow();
+      expect(check(props, { p: [1, 2, 3, 4, '5', 6] })).toHaveLength(1);
     });
   });
 
@@ -74,13 +72,11 @@ describe('individual props', () => {
     });
 
     test('no errors on success', () => {
-      const fn = () => check(props, { p: 'two' });
-      expect(fn).not.toThrow();
+      expect(check(props, { p: 'two' })).toEqual([]);
     });
 
     test('errors on failure', () => {
-      const fn = () => check(props, { p: 'three' });
-      expect(fn).toThrow();
+      expect(check(props, { p: 'three' })).toHaveLength(1);
     });
   });
 
@@ -110,12 +106,11 @@ describe('individual props', () => {
             three: 'another string',
           },
         });
-      expect(fn).not.toThrow();
+      expect(fn()).toEqual([]);
     });
 
     test('no errors on missing optional props', () => {
-      const fn = () => check(props, { p: { two: true } });
-      expect(fn).not.toThrow();
+      expect(check(props, { p: { two: true } })).toEqual([]);
     });
 
     test('errors on missing required props', () => {
@@ -123,7 +118,7 @@ describe('individual props', () => {
         check(props, {
           p: { one: 'a string', three: 'another string' },
         });
-      expect(fn).toThrow();
+      expect(fn()).toHaveLength(1);
     });
 
     test('errors on extra props', () => {
@@ -131,7 +126,7 @@ describe('individual props', () => {
         check(props, {
           p: { two: false, four: 'I should not be here' },
         });
-      expect(fn).toThrow();
+      expect(fn()).toHaveLength(1);
     });
   });
 
@@ -157,7 +152,7 @@ describe('individual props', () => {
             two: 'another string',
           },
         });
-      expect(fn).not.toThrow();
+      expect(fn()).toEqual([]);
     });
 
     test('errors on wrong unkeyed type', () => {
@@ -165,7 +160,7 @@ describe('individual props', () => {
         check(props, {
           p: { one: 'a string', two: 123 },
         });
-      expect(fn).toThrow();
+      expect(fn()).toHaveLength(1);
     });
   });
 
@@ -192,13 +187,11 @@ describe('individual props', () => {
     });
 
     test('no errors on success', () => {
-      const fn = () => check(props, { p: { two: { three: true } } });
-      expect(fn).not.toThrow();
+      expect(check(props, { p: { two: { three: true } } })).toEqual([]);
     });
 
     test('errors on failure', () => {
-      const fn = () => check(props, { p: { two: 3 } });
-      expect(fn).toThrow();
+      expect(check(props, { p: { two: 3 } })).toHaveLength(1);
     });
   });
 });
@@ -234,38 +227,31 @@ describe('full definitions', () => {
   });
 
   test('no errors on success (1)', () => {
-    const fn = () => check(props.DefOne, { one: 'a string', two: 123 });
-    expect(fn).not.toThrow();
+    expect(check(props.DefOne, { one: 'a string', two: 123 })).toEqual([]);
   });
 
   test('no errors on success (2)', () => {
-    const fn = () => check(props.DefTwo, { one: false, two: 'b' });
-    expect(fn).not.toThrow();
+    expect(check(props.DefTwo, { one: false, two: 'b' })).toEqual([]);
   });
 
   test('errors on failure - missing required prop', () => {
-    const fn = () => check(props.DefOne, { one: 'a string' });
-    expect(fn).toThrow();
+    expect(check(props.DefOne, { one: 'a string' })).toHaveLength(1);
   });
 
   test('errors on failure - wrong prop type', () => {
-    const fn = () => check(props.DefOne, { two: 'a string' });
-    expect(fn).toThrow();
+    expect(check(props.DefOne, { two: 'a string' })).toHaveLength(1);
   });
 
   test('no errors on success - nested props', () => {
-    const fn = () => check(props.DefTwo, { three: { five: 'hello' } });
-    expect(fn).not.toThrow();
+    expect(check(props.DefTwo, { three: { five: 'hello' } })).toEqual([]);
   });
 
   test('errors on failure - nested extra props', () => {
-    const fn = () => check(props.DefTwo, { three: { six: 'hello' } });
-    expect(fn).toThrow();
+    expect(check(props.DefTwo, { three: { six: 'hello' } })).toHaveLength(1);
   });
 
   test('errors on failure - wrong enum value', () => {
-    const fn = () => check(props.DefTwo, { two: 'this is invalid' });
-    expect(fn).toThrow();
+    expect(check(props.DefTwo, { two: 'this is invalid' })).toHaveLength(1);
   });
 });
 
@@ -303,13 +289,11 @@ describe('non-object full definitions', () => {
   });
 
   test('check() ignores non-object definition, even if correct', () => {
-    const fn = () => check(props.DefThree, 'I am a string');
-    expect(fn).not.toThrow();
+    expect(check(props.DefThree, 'I am a string')).toEqual([]);
   });
 
   test('check() ignores non-object definition, even if incorrect', () => {
-    const fn = () => check(props.DefThree, { thisIs: 'wrong' });
-    expect(fn).not.toThrow();
+    expect(check(props.DefThree, { thisIs: 'wrong' })).toEqual([]);
   });
 });
 
@@ -351,8 +335,7 @@ describe('complex references', () => {
       name: 'My Pet',
     };
 
-    const fn = () => check(props.Pet, pet);
-    expect(fn).not.toThrow();
+    expect(check(props.Pet, pet)).toEqual([]);
   });
 
   test('Valid nested data should pass', () => {
@@ -365,8 +348,7 @@ describe('complex references', () => {
       ],
     };
 
-    const fn = () => check(props.Pet, pet);
-    expect(fn).not.toThrow();
+    expect(check(props.Pet, pet)).toEqual([]);
   });
 
   test('Invalid simple data should fail', () => {
@@ -374,8 +356,7 @@ describe('complex references', () => {
       NoName: 'My Pet',
     };
 
-    const fn = () => check(props.Pet, pet);
-    expect(fn).toThrow();
+    expect(check(props.Pet, pet)).toHaveLength(1);
   });
 
   test('Invalid nested data should fail', () => {
@@ -388,8 +369,7 @@ describe('complex references', () => {
       ],
     };
 
-    const fn = () => check(props.Pet, pet);
-    expect(fn).toThrow();
+    expect(check(props.Pet, pet)).toHaveLength(1);
   });
 });
 
@@ -427,8 +407,7 @@ describe('circular references', () => {
       ],
     };
 
-    const fn = () => check(props.Node, node);
-    expect(fn).not.toThrow();
+    expect(check(props.Node, node)).toEqual([]);
   });
 
   test('tight circular properties', () => {
@@ -438,8 +417,7 @@ describe('circular references', () => {
 
     node.ancestors = [node];
 
-    const fn = () => check(props.Node, node);
-    expect(fn).not.toThrow();
+    expect(check(props.Node, node)).toEqual([]);
   });
 
   test('nested circular properties', () => {
@@ -455,8 +433,7 @@ describe('circular references', () => {
 
     node1.ancestors.push(node2);
 
-    const fn = () => check(props.Node, node1);
-    expect(fn).not.toThrow();
+    expect(check(props.Node, node1)).toEqual([]);
   });
 
   test('deeply nested circular properties', () => {
@@ -477,8 +454,7 @@ describe('circular references', () => {
 
     node1.ancestors.push(node3);
 
-    const fn = () => check(props.Node, node1);
-    expect(fn).not.toThrow();
+    expect(check(props.Node, node1)).toEqual([]);
   });
 
   test('invalid deeply nested circular properties should fail', () => {
@@ -499,7 +475,6 @@ describe('circular references', () => {
 
     node1.ancestors.push(node3);
 
-    const fn = () => check(props.Node, node1);
-    expect(fn).toThrow();
+    expect(check(props.Node, node1)).toHaveLength(1);
   });
 });
