@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 
+const CHILD_ERRORS_FLAG = '__CHILD_VALIDATION_ERRORS';
+
 const PROP_CHECKED_FLAG = Symbol();
 const isObject = input => input === Object(input);
 
@@ -81,9 +83,10 @@ const makePropTypeReference = (isRequired, refName, refLookup) => (
   propValue[PROP_CHECKED_FLAG] = true;
 
   const childErrors = check(ref, propValue, 'prop', description);
-  
+
   if (childErrors.length > 0) {
-    throw Error(childErrors);
+    // Using console.error as a method to bubble up the errors to check(). Ugh
+    console.error(CHILD_ERRORS_FLAG, childErrors);
   }
 
   delete propValue[PROP_CHECKED_FLAG];
@@ -146,11 +149,16 @@ export const check = (...args) => {
     throw Error('Cannot track checkPropTypes behaviour without a console');
   }
 
-  const errors = []; // NB: Not working properly; only first error returned
+  let errors = []; // NB: Not working properly; only first error returned
   const consoleError = console.error;
 
-  console.error = function(msg) {
-    errors.push(msg);
+  console.error = function(msg, magicParamForChildErrors) {
+    if (msg === CHILD_ERRORS_FLAG) {
+      errors = errors.concat(magicParamForChildErrors);
+    } else {
+      errors.push(msg);
+    }
+
     PropTypes.resetWarningCache();
   };
 
