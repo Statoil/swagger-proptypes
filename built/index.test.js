@@ -317,6 +317,12 @@ describe('full definitions', () => {
       two: 'this is invalid'
     })).toHaveLength(1);
   });
+  test('multiple failures reported', () => {
+    expect((0, _.check)(props.DefTwo, {
+      one: 'a string',
+      two: 123
+    })).toHaveLength(2);
+  });
 });
 describe('non-object full definitions', () => {
   let props;
@@ -404,13 +410,13 @@ describe('complex references', () => {
       }
     });
   });
-  test('Valid simple data should pass', () => {
+  test('valid simple data should pass', () => {
     const pet = {
       name: 'My Pet'
     };
     expect((0, _.check)(props.Pet, pet)).toEqual([]);
   });
-  test('Valid nested data should pass', () => {
+  test('valid nested data should pass', () => {
     const pet = {
       name: 'My Pet',
       tags: [{
@@ -426,13 +432,13 @@ describe('complex references', () => {
     };
     expect((0, _.check)(props.Pet, pet)).toEqual([]);
   });
-  test('Invalid simple data should fail', () => {
+  test('invalid simple data should fail', () => {
     const pet = {
       NoName: 'My Pet'
     };
     expect((0, _.check)(props.Pet, pet)).toHaveLength(1);
   });
-  test('Invalid nested data should fail', () => {
+  test('invalid nested data should fail', () => {
     const pet = {
       name: 'My Pet',
       tags: [{
@@ -539,5 +545,83 @@ describe('circular references', () => {
     };
     node1.ancestors.push(node3);
     expect((0, _.check)(props.Node, node1)).toHaveLength(1);
+  });
+});
+describe('checkExact', () => {
+  let props;
+  beforeEach(() => {
+    props = (0, _.propsFromDefs)({
+      Pet: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: {
+            type: 'string'
+          },
+          tags: {
+            type: 'array',
+            items: {
+              $ref: '#/definitions/Tag'
+            }
+          }
+        }
+      },
+      Tag: {
+        type: 'object',
+        required: ['id', 'name'],
+        properties: {
+          id: {
+            type: 'integer'
+          },
+          name: {
+            type: 'string'
+          }
+        }
+      }
+    });
+  });
+  test('valid simple data should pass', () => {
+    const pet = {
+      name: 'My Pet'
+    };
+    expect((0, _.checkExact)('Pet', props.Pet, pet)).toEqual([]);
+  });
+  test('invalid simple data should fail', () => {
+    const pet = {
+      banana: true
+    };
+    expect((0, _.checkExact)('Pet', props.Pet, pet)).toHaveLength(1);
+  });
+  test('valid nested data should pass', () => {
+    const pet = {
+      name: 'My Pet',
+      tags: [{
+        id: 1,
+        name: 'cute'
+      }, {
+        id: 2,
+        name: 'cuter'
+      }, {
+        id: 3,
+        name: 'cutest'
+      }]
+    };
+    expect((0, _.checkExact)('Pet', props.Pet, pet)).toEqual([]);
+  });
+  test('invalid nested data should fail', () => {
+    const pet = {
+      name: 'My Pet',
+      tags: [{
+        id: 1,
+        name: 'cute'
+      }, {
+        id: 'oops',
+        name: 'cuter'
+      }, {
+        id: 1,
+        name: 'cutest'
+      }]
+    };
+    expect((0, _.checkExact)('Pet', props.Pet, pet)).toHaveLength(1);
   });
 });
