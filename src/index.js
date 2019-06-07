@@ -1,3 +1,4 @@
+import './override-env';
 import PropTypes from 'prop-types';
 
 const CHILD_ERRORS_FLAG = '__CHILD_VALIDATION_ERRORS';

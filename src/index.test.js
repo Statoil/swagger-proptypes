@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types';
 import { propFromDef, propsFromDefs, check, checkExact } from '.';
+import PropTypes from 'prop-types';
 
 describe('individual props', () => {
   test('fail on unknown type', () => {

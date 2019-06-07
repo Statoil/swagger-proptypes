@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.checkExact = exports.check = exports.propsFromDefs = exports.propFromDef = exports.makePropFromDef = void 0;
 
+require("./override-env");
+
 var _propTypes = _interopRequireDefault(require("prop-types"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }

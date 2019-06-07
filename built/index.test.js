@@ -1,8 +1,8 @@
 "use strict";
 
-var _propTypes = _interopRequireDefault(require("prop-types"));
-
 var _ = require(".");
+
+var _propTypes = _interopRequireDefault(require("prop-types"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
